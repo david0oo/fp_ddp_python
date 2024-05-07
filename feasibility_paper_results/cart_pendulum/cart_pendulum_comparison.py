@@ -132,11 +132,10 @@ def test_on_cart_pendulum(ddp=True, scipy=False, ipopt=False):
     ipopt_list_n_eval_gradient_f = []
     ipopt_list_n_eval_jacobian_g = []
     ipopt_list_n_eval_hessian_l = []
-
+    ipopt_fails = []
     # Run the simulation
     for i in range(100):
 
-        # initial_p_guess = cs.DM.from_file(dir_name+"/initial_guess_ipopt_sol/ipopt_position_solution_at_"+str(i)+".mtx")
         ocp = create_ocp(moon_x=moon_x[i])
 
         if ddp:
@@ -159,6 +158,8 @@ def test_on_cart_pendulum(ddp=True, scipy=False, ipopt=False):
             ipopt_list_n_eval_gradient_f.append(n_eval_gradient_f)
             ipopt_list_n_eval_jacobian_g.append(n_eval_jac_g)
             ipopt_list_n_eval_hessian_l.append(n_eval_hess_l)
+            if n_eval_hess_l == np.inf:
+                ipopt_fails.append(i)
 
 
     # Store the program
@@ -200,4 +201,4 @@ def test_on_cart_pendulum(ddp=True, scipy=False, ipopt=False):
 # Run the simulation
 ###############################################################################
 if __name__ == "__main__":
-    test_on_cart_pendulum(ddp=True, scipy=False, ipopt=False)
+    test_on_cart_pendulum(ddp=False, scipy=False, ipopt=True)

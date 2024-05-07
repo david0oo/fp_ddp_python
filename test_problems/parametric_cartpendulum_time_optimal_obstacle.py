@@ -70,7 +70,8 @@ class VisualizationFunctor:
 
 # Start an optimal control environment with a time horizon of 10 seconds
 # starting from t0=0s.
-def create_ocp(moon_x=0.7, initial_p_guess=None):
+# def create_ocp(moon_x=0.7, initial_p_guess=None):
+def create_ocp():
 
     ocp = Ocp(t0=0, T=1)
     # tmp_ocp = Ocp(t0=0, T=5)
@@ -87,6 +88,7 @@ def create_ocp(moon_x=0.7, initial_p_guess=None):
     max_v = 10.
     max_theta = cs.pi/4
 
+    moon_x = ocp.parameter()
     moon_midpoint = cs.vertcat(moon_x, 0.9) # works
     moon_radius = 0.3
 
@@ -176,6 +178,7 @@ def create_ocp(moon_x=0.7, initial_p_guess=None):
     # #  Debug forward simulation
     # ocp.set_initial(T, 5.0)          # Function of time
     ocp.set_initial(T, T_sol)          # Function of time
+    ocp.set_value(moon_x, 0.7)
     # if initial_p_guess is not None:
     #      ocp.set_initial(p, initial_p_guess)          # Function of time
     # else:

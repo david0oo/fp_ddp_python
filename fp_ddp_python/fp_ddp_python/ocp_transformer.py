@@ -95,6 +95,9 @@ class OCP_To_Data_Transformer:
             # sort the list
             stage_indeces.sort()
             # remove indeces that belong to previous stage due to dynamics
+            if i == N:
+                print("Here!")
+
             if i > 0:
                 # Determine the dynamics indeces within the previous stage
                 dynamics_indeces_stage = [j for j in constraints_per_stage[i-1] if j in stage_indeces and "F" in str(ocp._method.opti.debug.g_lookup(j))]
@@ -172,6 +175,10 @@ class OCP_To_Data_Transformer:
         lbg_original = cs.evalf(ocp._method.opti.debug.lbg)
         ubg_original = cs.evalf(ocp._method.opti.debug.ubg)
 
+        # Initialize the initial state with the initial condition depends on the 
+        # x0_vector[hpipm_initial_condition_positions] = lbg_original[initial_condition_indeces]
+        # x0_vector.to_file("x0.mtx")
+
         original_g_fun = cs.Function("g_fun", [x_vector, parameters], [ocp._method.opti.debug.g], opts)
         original_jac_g_fun = cs.Function("jac_g_fun", [x_vector, parameters], [cs.jacobian(ocp._method.opti.debug.g, x_vector)], opts)
 
@@ -229,9 +236,13 @@ class OCP_To_Data_Transformer:
         discrete_dynamics_fun = cs.Function('discrete_dynamics', [x_sym, u_sym], [discrete_dynamics(x_sym, u_sym, dt, 0, p0_vector, cs.DM.zeros(0))[0]], opts)
 
         ## Get the indeces of all constraints apart from dynamics!
-        g_constraints = ocp._method.opti.debug.g[initial_condition_indeces + constraint_indeces]
-        lbg_constraints = cs.evalf(ocp._method.opti.debug.lbg[initial_condition_indeces + constraint_indeces])
-        ubg_constraints = cs.evalf(ocp._method.opti.debug.ubg[initial_condition_indeces + constraint_indeces])
+        # g_constraints = ocp._method.opti.debug.g[initial_condition_indeces + constraint_indeces]
+        # lbg_constraints = cs.evalf(ocp._method.opti.debug.lbg[initial_condition_indeces + constraint_indeces])
+        # ubg_constraints = cs.evalf(ocp._method.opti.debug.ubg[initial_condition_indeces + constraint_indeces])
+
+        g_constraints = ocp._method.opti.debug.g[constraint_indeces]
+        lbg_constraints = cs.evalf(ocp._method.opti.debug.lbg[constraint_indeces])
+        ubg_constraints = cs.evalf(ocp._method.opti.debug.ubg[constraint_indeces])
 
         ## Get dynamics excluding initial condition 
         g_dynamics = ocp._method.opti.debug.g[dynamics_indeces]
@@ -254,7 +265,10 @@ class OCP_To_Data_Transformer:
             new_f += 0.5*cs.sumsqr(cs.fmax(0, g_constraints-ubg_constraints))
 
         ## ------------ Define functions ------------------------------------------
-        # Function for the dynamics constraints
+        # # Function for the dynamics constraints
+        # dyn_con_fun = cs.Function("dyn_fun", [x_vector, parameters], [g_dynamics])
+        # jac_dyn_con_fun = cs.Function("jac_dyn_fun", [x_vector, parameters], [cs.jacobian(g_dynamics, x_vector)])
+        # Function for only dynamics no initial condition
         dyn_con_fun = cs.Function("dyn_fun", [x_vector, parameters], [g_dynamics], opts)
         jac_dyn_con_fun = cs.Function("jac_dyn_fun", [x_vector, parameters], [cs.jacobian(g_dynamics, x_vector)], opts)
 
