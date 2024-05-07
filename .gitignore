@@ -165,3 +165,9 @@ cython_debug/
 **/__pycache__/
 **/__pycache__/*
 **/*.egg-info/
+
+# We do not want c and o files
+**/*.c 
+**/*.o
+**/c_generated_code/*.*
+**/c_generated_code/
