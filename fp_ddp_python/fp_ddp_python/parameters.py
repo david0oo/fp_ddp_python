@@ -1,4 +1,4 @@
-""" 
+"""
 This file contains the parameters for the Feasible Sequential Linear/Quadratic
 Programming solver
 """
@@ -92,7 +92,7 @@ class Parameters:
         if 'regularization_mu0' in opts:
             self.regularization_mu0 = opts['regularization_mu0']
         else:
-            self.regularization_mu0 = 1.0
+            self.regularization_mu0 = 1e-3#1.0
 
         #######################################################################
         # Parameters for Iterate
@@ -101,4 +101,3 @@ class Parameters:
             self.penalty = opts['penalty']
         else:
             self.penalty = 1.0
-            

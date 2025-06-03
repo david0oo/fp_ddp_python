@@ -1,5 +1,5 @@
 import pickle
-from matplotlib import pyplot as plt 
+from matplotlib import pyplot as plt
 import numpy as np
 import os
 
@@ -9,7 +9,7 @@ import matplotlib
 def latexify():
     params = {#'backend': 'ps',
             #'text.latex.preamble': r"\usepackage{amsmath}",
-            'axes.labelsize': 10,
+            'axes.labelsize': 9.5,
             'axes.titlesize': 10,
             'legend.fontsize': 10,
             'xtick.labelsize': 10,
@@ -30,6 +30,7 @@ ddp_file_timings = open(dir_name + '/acados_ddp_results/acados_timings.pkl', 'rb
 ddp_file_n_eval_gn_hessian = open(dir_name + '/ddp_results/ddp_n_eval_gn_hessian.pkl', 'rb')
 # Load stuff
 ddp_timings = pickle.load(ddp_file_timings)
+print('acados timings: ', ddp_timings)
 ddp_n_eval_gn_hessian = pickle.load(ddp_file_n_eval_gn_hessian)
 # Close files
 ddp_file_timings.close()
@@ -55,11 +56,27 @@ ipopt_file_timings = open(dir_name + '/ipopt_no_codegen/ipopt_t_wall_total.pkl',
 # Load stuff
 ipopt_timings = pickle.load(ipopt_file_timings)
 ipopt_codegen_timings = pickle.load(ipopt_codegen_file_timings)
+print('ipopt codegen timings: ', ipopt_codegen_timings)
 ipopt_n_eval_hessian_l = pickle.load(ipopt_file_n_eval_hessian_l)
 # Close files
 ipopt_file_timings.close()
 ipopt_codegen_file_timings.close()
 ipopt_file_n_eval_hessian_l.close()
+
+###############################################################################
+# FATROP
+###############################################################################
+# Open files
+fatrop_file_n_eval_hessian_l = open(dir_name + '/fatrop_results/fatrop_n_eval_hessian_l.pkl', 'rb')
+fatrop_file_timings = open(dir_name + '/fatrop_results/fatrop_t_wall_total.pkl', 'rb')
+# Load stuff
+fatrop_timings = pickle.load(fatrop_file_timings)
+print('fatrop timings: ', fatrop_timings)
+fatrop_n_eval_hessian_l = pickle.load(fatrop_file_n_eval_hessian_l)
+print('fatrop_n_eval_hessian_l: ', fatrop_n_eval_hessian_l)
+# Close files
+fatrop_file_timings.close()
+fatrop_file_n_eval_hessian_l.close()
 
 # Plot objective evaluations
 x_pos = np.linspace(0.7, 4.3, 100)
@@ -74,20 +91,28 @@ for i in range(100):
         ipopt_timings[i] = np.inf
     if scipy_n_eval_hessian_f[i] == -1:
         scipy_n_eval_hessian_f[i] = np.inf
+    if fatrop_n_eval_hessian_l[i] == -1 or fatrop_n_eval_hessian_l[i] == np.inf:
+        fatrop_n_eval_hessian_l[i] = np.inf
+        fatrop_timings[i] = np.inf
 
 ###############################################################################
 # Plotting from here
 ###############################################################################
 title = "wall_time_and_hessian"
-hi = 2.1
-fig, (ax1, ax2) = plt.subplots(1, 2, sharey = True, figsize = (hi*2.25, hi))
+hi = 2.0
+fig, (ax1, ax2) = plt.subplots(1, 2, sharey = True, figsize = (hi*2.55, hi))
+# fig, (ax1, ax2) = plt.subplots(1, 2, sharey = True, figsize = (hi*2.4, hi)) #with hi=1.8
+
+# This is the original figsize from the final version
+# hi = 2.1
+# fig, (ax1, ax2) = plt.subplots(1, 2, sharey = True, figsize = (hi*2.25, hi))
 plt.subplots_adjust(wspace=0.05)
 
-labels = ["FP-DDP $\\texttt{acados}$", "$\\texttt{IPOPT}$", "$\\texttt{IPOPT}$-codegen"]
-lstyle = ["solid", "dashed", "dashdot"]
+labels = ["FP-DDP $\\texttt{acados}$", "$\\texttt{IPOPT}$", "$\\texttt{IPOPT}$-codegen", "$\\texttt{FATROP}$"]
+lstyle = ["solid", "dashed", "dashdot", "dotted"]
 # Plot performance plot time
 # Do performance plot here for Hessian evaluations
-t_sp = np.vstack((np.vstack((np.array(ddp_timings), np.array(ipopt_timings))), np.array(ipopt_codegen_timings)))
+t_sp = np.vstack((np.vstack((np.vstack((np.array(ddp_timings), np.array(ipopt_timings))), np.array(ipopt_codegen_timings))), np.array(fatrop_timings)))
 n_p = t_sp.shape[1] # number of problems
 n_s = t_sp.shape[0] # number of solvers
 tm_sp = np.min(t_sp, axis=0) # take minimum of solvers per problem
@@ -111,15 +136,17 @@ ax1.grid()
 
 # Plot performance plot Hessian
 # Do performance plot here for Hessian evaluations
-t_sp = np.vstack((np.vstack((np.array(ddp_n_eval_gn_hessian), np.array(ipopt_n_eval_hessian_l))), np.array(scipy_n_eval_hessian_f)))
+t_sp = np.vstack((np.vstack((np.array(ddp_n_eval_gn_hessian), np.array(ipopt_n_eval_hessian_l))), np.array(fatrop_n_eval_hessian_l)))
+# t_sp = np.vstack((np.vstack((np.vstack((np.array(ddp_n_eval_gn_hessian), np.array(ipopt_n_eval_hessian_l))), np.array(scipy_n_eval_hessian_f))),np.array(fatrop_n_eval_hessian_l)))
 n_p = t_sp.shape[1]
 n_s = t_sp.shape[0]
 tm_sp = np.min(t_sp, axis=0)
 tm_sp = np.tile(tm_sp, (n_s, 1))
 r_sp = t_sp / tm_sp
 
-labels = ["FP-DDP $\\texttt{acados}$", "$\\texttt{IPOPT}$", "$\\texttt{Scipy}$"]
-lstyle = ["solid", "dashed", "dotted"]
+# labels = ["FP-DDP $\\texttt{acados}$", "$\\texttt{IPOPT}$", "$\\texttt{Scipy}$", "$\\texttt{FATROP}$"]
+labels = ["FP-DDP $\\texttt{acados}$", "$\\texttt{IPOPT}$", "$\\texttt{FATROP}$"]
+lstyle = ["solid", "dashed", "dashdot", "dotted"]
 
 tau_max = np.max(r_sp[np.isfinite(r_sp)]) * 2
 for ρ_solver, label, linestyle in zip(r_sp, labels, lstyle):

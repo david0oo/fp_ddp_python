@@ -7,7 +7,7 @@
 #
 ###############################################################################
 import pickle
-from matplotlib import pyplot as plt 
+from matplotlib import pyplot as plt
 import numpy as np
 import os
 
@@ -36,7 +36,7 @@ moon_x = np.linspace(0.7, 4.3, 100)
 ###############################################################################
 # Open files
 ddp_file_n_eval_f = open(dir_name + '/ddp_results/ddp_n_eval_f.pkl', 'rb')
-ddp_file_n_eval_gn_hessian = open(dir_name + '/ddp_results/acados_n_eval_gn_hessian.pkl', 'rb')
+ddp_file_n_eval_gn_hessian = open(dir_name + '/ddp_results/new_acados_n_eval_gn_hessian.pkl', 'rb')
 
 # Load stuff
 ddp_n_eval_f = pickle.load(ddp_file_n_eval_f)
@@ -109,7 +109,7 @@ n_p = t_sp.shape[1]
 n_s = t_sp.shape[0]
 tm_sp = np.min(t_sp, axis=0)
 tm_sp = np.tile(tm_sp, (n_s, 1))
-# print("tm_sp:", tm_sp)  
+# print("tm_sp:", tm_sp)
 r_sp = t_sp / tm_sp
 
 title = "Objective_Function_Evaluations"

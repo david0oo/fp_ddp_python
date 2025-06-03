@@ -40,11 +40,11 @@ class FeasibilityProblemSolver:
         self.nlp_problem = NLPProblem(feasibility_problem_data)
         self.terminator = TerminationCriterion(self.parameters)
         self.linesearch = LineSearch(self.parameters)
-        # 
+        #
         self.iterate = Iterate(self.nlp_problem, self.parameters)
         self.direction = Direction(self.nlp_problem, self.parameters)
         self.qp_solver = QPSolver(self.nlp_problem, feasibility_problem_data)
-    
+
     def create_feasible_initial_guess(self):
         self.iterate.evaluate_quantities(self.nlp_problem, self.log, False)
         self.direction.prepare_qp_data(self.iterate, self.nlp_problem)
@@ -71,7 +71,7 @@ class FeasibilityProblemSolver:
         #######################################################################
         self.n_iter = 0
         self.step_accepted = False
-        
+
         while True:
 
             # Evaluate the functions at x_k
@@ -92,7 +92,7 @@ class FeasibilityProblemSolver:
             ###################################################################
             # GLOBALIZATION
             ###################################################################
-            
+
             # self.iterate.penalty = .001
             if self.mode == "sqp":
                 # Do backtracking line search here

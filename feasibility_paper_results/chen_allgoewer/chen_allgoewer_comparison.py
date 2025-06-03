@@ -1,4 +1,4 @@
-# Include standard 
+# Include standard
 import casadi as cs
 import sys
 import os
@@ -18,6 +18,8 @@ ocp = create_ocp()
 transformer = OCP_To_Data_Transformer()
 feasibility_problem_data = transformer.transform(ocp,smoothmax=False)
 
+opts = {}
+opts['objective_tol'] = 1e-15
 # Create DMS solver
 solver_dms = FeasibilityProblemSolver(feasibility_problem_data, mode="dms", init_feasible=False)
 solver_dms.iterate.set_penalty(1.0)
@@ -32,7 +34,7 @@ solver_dms3.iterate.set_penalty(0.01)
 solver_dms3.solve(feasibility_problem_data)
 
 # Create DSS solver
-solver_dss = FeasibilityProblemSolver(feasibility_problem_data, mode="dss", init_feasible=True)
+solver_dss = FeasibilityProblemSolver(feasibility_problem_data, mode="dss", init_feasible=True, opts=opts)
 solver_dss.solve(feasibility_problem_data)
 
 # Create DDP solver

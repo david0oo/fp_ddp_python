@@ -1,4 +1,4 @@
-# Include standard 
+# Include standard
 import casadi as cs
 import rockit as roc
 import numpy as np
@@ -53,7 +53,7 @@ def create_ipopt_executable_and_input_files(ocp: roc.Ocp):
     # Compile the code
     # print(args)
     subprocess.Popen(args)
-    
+
 
 def run_ipopt_executable():
     time_codegen = []
@@ -76,59 +76,9 @@ def run_ipopt_executable():
         pickle.dump(time_codegen, f)
 
 ###############################################################################
-# Test the problems
-###############################################################################
-# def test_on_cart_pendulum(ddp=True, scipy=False, ipopt=False):
-    
-#     # Prepare lists for data
-#     moon_x = cs.linspace(0.7, 4.3, 100)
-#     ddp_list_n_eval_f = []
-#     ddp_list_n_eval_g = []
-#     ddp_list_n_eval_gradient_f = []
-#     ddp_list_n_eval_jacobian_g = []
-#     ddp_list_n_eval_gn_hessian = []
-
-#     scipy_list_f_values = []
-#     scipy_list_n_eval_f = []
-#     scipy_list_n_eval_gradient_f = []
-#     scipy_list_n_eval_hess_f = []
-
-#     ipopt_list_n_eval_f = []
-#     ipopt_list_n_eval_g = []
-#     ipopt_list_n_eval_gradient_f = []
-#     ipopt_list_n_eval_jacobian_g = []
-#     ipopt_list_n_eval_hessian_l = []
-
-#     # Run the simulation
-#     for i in range(1):
-
-#         # initial_p_guess = cs.DM.from_file(dir_name+"/initial_guess_ipopt_sol/ipopt_position_solution_at_"+str(i)+".mtx")
-#         ocp = create_ocp(moon_x=moon_x[i])
-
-#         # n_eval_f, n_eval_g, n_eval_gradient_f, n_eval_jac_g, n_eval_hess_l = test_ipopt_feasibility_problem(ocp)
-#         ipopt_list_n_eval_f.append(n_eval_f)
-#         ipopt_list_n_eval_g.append(n_eval_g)
-#         ipopt_list_n_eval_gradient_f.append(n_eval_gradient_f)
-#         ipopt_list_n_eval_jacobian_g.append(n_eval_jac_g)
-#         ipopt_list_n_eval_hessian_l.append(n_eval_hess_l)
-
-#     if ipopt:
-#         with open('ipopt_results/ipopt_n_eval_f.pkl', 'wb') as f:
-#             pickle.dump(ipopt_list_n_eval_f, f)
-#         with open('ipopt_results/ipopt_n_eval_g.pkl', 'wb') as f:
-#             pickle.dump(ipopt_list_n_eval_g, f)
-#         with open('ipopt_results/ipopt_n_eval_gradient_f.pkl', 'wb') as f:
-#             pickle.dump(ipopt_list_n_eval_gradient_f, f)
-#         with open('ipopt_results/ipopt_n_eval_jacobian_g.pkl', 'wb') as f:
-#             pickle.dump(ipopt_list_n_eval_jacobian_g, f)
-#         with open('ipopt_results/ipopt_n_eval_hessian_l.pkl', 'wb') as f:
-#             pickle.dump(ipopt_list_n_eval_hessian_l, f)
-
-###############################################################################
 # Run the simulation
 ###############################################################################
 if __name__ == "__main__":
     # ocp = create_ocp()
     # create_ipopt_executable_and_input_files(ocp)
     run_ipopt_executable()
-    # test_on_cart_pendulum(ddp=True, scipy=False, ipopt=False)

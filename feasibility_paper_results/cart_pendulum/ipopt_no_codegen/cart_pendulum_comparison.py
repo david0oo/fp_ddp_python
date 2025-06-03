@@ -1,4 +1,4 @@
-# Include standard 
+# Include standard
 import casadi as cs
 import rockit as roc
 import numpy as np
@@ -19,7 +19,7 @@ from fp_ddp_python.plotting import Plotter
 ###############################################################################
 # Test the problems
 ###############################################################################
-def test_on_cart_pendulum():
+def test_on_cart_pendulum(solve_feasibility_problem=True):
 
     n_tests = 1#20
 
@@ -35,12 +35,20 @@ def test_on_cart_pendulum():
     transformer = OCP_To_Data_Transformer()
     feasibility_problem_data = transformer.transform(ocp,smoothmax=False)
 
-    obj = feasibility_problem_data['feas_nlp_f']
-    g = feasibility_problem_data['feas_nlp_g']
-    x = ocp._method.opti.x
-    p = ocp._method.opti.p
-    lbg = feasibility_problem_data['feas_nlp_lbg']
-    ubg = feasibility_problem_data['feas_nlp_ubg']
+    if solve_feasibility_problem:
+        obj = feasibility_problem_data['feas_nlp_f']
+        g = feasibility_problem_data['feas_nlp_g']
+        x = ocp._method.opti.x
+        p = ocp._method.opti.p
+        lbg = feasibility_problem_data['feas_nlp_lbg']
+        ubg = feasibility_problem_data['feas_nlp_ubg']
+    else:
+        obj = 0
+        g = feasibility_problem_data['nlp_g']
+        x = ocp._method.opti.x
+        p = ocp._method.opti.p
+        lbg = feasibility_problem_data['nlp_lbg']
+        ubg = feasibility_problem_data['nlp_ubg']
 
     x0_vector = ocp.initial_value(ocp._method.opti.x)
     p0_vector = ocp.initial_value(ocp._method.opti.p)
@@ -59,7 +67,6 @@ def test_on_cart_pendulum():
     n_call_hess_l = 0
     t_wall_tmp = 0.0
     for i in range(100):
-
         t_tmp = []
         for j in range(n_tests):
             res = solver(x0=x0_vector, p=np.array([moon_x[i]]), lbg=lbg, ubg=ubg)
@@ -97,18 +104,19 @@ def test_on_cart_pendulum():
     print("t_wall total: ", ipopt_list_t_wall_total)
     print("IPOPT fails: ", ipopt_fails)
 
-    with open('ipopt_t_wall_total.pkl', 'wb') as f:
-        pickle.dump(ipopt_list_n_eval_hessian_l, f)
-    with open('ipopt_n_eval_f.pkl', 'wb') as f:
-        pickle.dump(ipopt_list_n_eval_f, f)
-    with open('ipopt_n_eval_g.pkl', 'wb') as f:
-        pickle.dump(ipopt_list_n_eval_g, f)
-    with open('ipopt_n_eval_gradient_f.pkl', 'wb') as f:
-        pickle.dump(ipopt_list_n_eval_gradient_f, f)
-    with open('ipopt_n_eval_jacobian_g.pkl', 'wb') as f:
-        pickle.dump(ipopt_list_n_eval_jacobian_g, f)
-    with open('ipopt_n_eval_hessian_l.pkl', 'wb') as f:
-        pickle.dump(ipopt_list_n_eval_hessian_l, f)
+    if solve_feasibility_problem:
+        with open('ipopt_t_wall_total.pkl', 'wb') as f:
+            pickle.dump(ipopt_list_n_eval_hessian_l, f)
+        with open('ipopt_n_eval_f.pkl', 'wb') as f:
+            pickle.dump(ipopt_list_n_eval_f, f)
+        with open('ipopt_n_eval_g.pkl', 'wb') as f:
+            pickle.dump(ipopt_list_n_eval_g, f)
+        with open('ipopt_n_eval_gradient_f.pkl', 'wb') as f:
+            pickle.dump(ipopt_list_n_eval_gradient_f, f)
+        with open('ipopt_n_eval_jacobian_g.pkl', 'wb') as f:
+            pickle.dump(ipopt_list_n_eval_jacobian_g, f)
+        with open('ipopt_n_eval_hessian_l.pkl', 'wb') as f:
+            pickle.dump(ipopt_list_n_eval_hessian_l, f)
 
 ###############################################################################
 # Run the simulation

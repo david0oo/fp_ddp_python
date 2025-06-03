@@ -104,7 +104,8 @@ class Direction:
         self.A_k = iterate.jacobian_g_k
         self.G_k[:] = iterate.gradient_f_k
 
-        gamma = cs.fmin(2*iterate.f_k, 1e-3)
+        # gamma = cs.fmin(2*iterate.f_k, 1e-3)
+        gamma = 2*iterate.f_k
 
         self.reg_param = self.mu_k*gamma
         self.H_k = iterate.hessian_lagrangian_k + self.reg_param*cs.DM.eye(self.d_k.shape[0])

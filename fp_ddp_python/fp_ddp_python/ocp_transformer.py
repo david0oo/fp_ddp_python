@@ -17,7 +17,7 @@ class OCP_To_Data_Transformer:
                                           ubg,
                                           initial_indeces,
                                           dynamic_indeces):
-        
+
         lower_bounded = []
         lower_upper_bounded = []
         upper_bounded = []
@@ -29,7 +29,7 @@ class OCP_To_Data_Transformer:
             if i in dynamic_indeces:
                 continue
 
-            # Take initial conditions 
+            # Take initial conditions
             if lbg[i] != -cs.inf:
                 if ubg[i] != cs.inf:
                     lower_upper_bounded.append(i)
@@ -39,7 +39,7 @@ class OCP_To_Data_Transformer:
                 upper_bounded.append(i)
 
         return lower_bounded, lower_upper_bounded, upper_bounded
-    
+
     def retrieve_info_original_nlp(self, data:dict, ocp: rockit.Ocp):
 
         # Number of constraints and stages
@@ -82,11 +82,11 @@ class OCP_To_Data_Transformer:
 
         #######################################################################
         # Retrieve the constraint indeces
-        ####################################################################### 
+        #######################################################################
         for i in range(N+1):
 
             # there are duplicates since variables are in different constraints several times
-            if i < N: 
+            if i < N:
                 stage_indeces = cs.jacobian(ocp._method.opti.g,cs.vertcat(states_sampled[:,i], controls_sampled[:,i])).sparsity().row()
             else:
                 stage_indeces = cs.jacobian(ocp._method.opti.g, states_sampled[:,i]).sparsity().row()
@@ -105,7 +105,7 @@ class OCP_To_Data_Transformer:
                 # Remove the dynamics indeces from new stage
                 stage_indeces = [j for j in stage_indeces if j not in constraints_per_stage[i-1]]
                 # Determine dynamics indeces
-            
+
             # Add constraints to list
             constraints_per_stage[i] = stage_indeces
 
@@ -113,7 +113,7 @@ class OCP_To_Data_Transformer:
         # Retrieve the stagewise indeces for control, state, and general constraints
         #######################################################################
         for i in range(N+1):
-            if i < N: 
+            if i < N:
                 stage_indeces = list(set(constraints_per_stage[i]).difference(dynamics_indeces_per_stage[i]))
             else:
                 stage_indeces = constraints_per_stage[i]
@@ -148,7 +148,7 @@ class OCP_To_Data_Transformer:
         # Number of rows for matrix
         n_rows = len(cs.jacobian(ocp._method.opti.g[initial_condition_indeces], states_sampled[:,0]).sparsity().row())
         hpipm_initial_condition_positions = cs.jacobian(ocp._method.opti.g[initial_condition_indeces], states_sampled[:,0]).T.sparsity().row()
-        
+
         combined_positions = list(map(lambda x, y:(x,y), list(range(n_rows)), hpipm_initial_condition_positions))
         hpipm_initial_condition_J_matrix = np.zeros((n_rows, ocp.nx))
         for tup in combined_positions:
@@ -162,7 +162,7 @@ class OCP_To_Data_Transformer:
 
         # non_dynamics_indeces = [index for index in list(range(n_constraints)) if index not in initial_condition_indeces + dynamics_indeces]
         non_dynamics_indeces = [index for index in list(range(n_constraints)) if index not in dynamics_indeces]
-        
+
         #######################################################################
         # Extract information about NLP from OCP
         #######################################################################
@@ -175,7 +175,7 @@ class OCP_To_Data_Transformer:
         lbg_original = cs.evalf(ocp._method.opti.debug.lbg)
         ubg_original = cs.evalf(ocp._method.opti.debug.ubg)
 
-        # Initialize the initial state with the initial condition depends on the 
+        # Initialize the initial state with the initial condition depends on the
         # x0_vector[hpipm_initial_condition_positions] = lbg_original[initial_condition_indeces]
         # x0_vector.to_file("x0.mtx")
 
@@ -189,7 +189,7 @@ class OCP_To_Data_Transformer:
                                                    ubg_original,
                                                    initial_condition_indeces,
                                                    dynamics_indeces)
-        
+
         #######################################################################
         # Build the dict
         #######################################################################
@@ -203,6 +203,9 @@ class OCP_To_Data_Transformer:
         data['nlp_n_constraints'] = n_constraints
         data['nlp_lbg'] = lbg_original
         data['nlp_ubg'] = ubg_original
+        data['nlp_g'] = ocp._method.opti.debug.g
+        data['nlp_f'] = ocp._method.opti.debug.f
+        data['nlp_x'] = ocp._method.opti.debug.x
         data['nlp_g_fun'] = original_g_fun
         data['nlp_jac_g_fun'] = original_jac_g_fun
         data['nlp_g_initial_condition_indeces'] = initial_condition_indeces
@@ -244,7 +247,7 @@ class OCP_To_Data_Transformer:
         lbg_constraints = cs.evalf(ocp._method.opti.debug.lbg[constraint_indeces])
         ubg_constraints = cs.evalf(ocp._method.opti.debug.ubg[constraint_indeces])
 
-        ## Get dynamics excluding initial condition 
+        ## Get dynamics excluding initial condition
         g_dynamics = ocp._method.opti.debug.g[dynamics_indeces]
         lbg_dynamics = cs.evalf(ocp._method.opti.debug.lbg[dynamics_indeces])
         ubg_dynamics = cs.evalf(ocp._method.opti.debug.ubg[dynamics_indeces])
@@ -254,15 +257,15 @@ class OCP_To_Data_Transformer:
         ## ------------ Define the new objective function -------------------------
         x = cs.MX.sym('x')
         # smoothmax = cs.Function('smoothmax', [x], [cs.logsumexp(cs.vertcat(x,0), cs.MX(0.000001))])
-        smoothmax = cs.Function('smoothmax', [x], [cs.logsumexp(cs.vertcat(x,0), cs.MX(1e-10))])
-        smoothmap = smoothmax.map(g_constraints.shape[0])
-        if smoothmax:
-        # A smooth max version
-            new_f = 0.5*cs.sumsqr(smoothmap(lbg_constraints-g_constraints))
-            new_f += 0.5*cs.sumsqr(smoothmap(g_constraints-ubg_constraints))
-        else:
-            new_f = 0.5*cs.sumsqr(cs.fmax(0, lbg_constraints-g_constraints))
-            new_f += 0.5*cs.sumsqr(cs.fmax(0, g_constraints-ubg_constraints))
+        # smoothmax = cs.Function('smoothmax', [x], [cs.logsumexp(cs.vertcat(x,0), cs.MX(1e-10))])
+        # smoothmap = smoothmax.map(g_constraints.shape[0])
+        # if smoothmax:
+        # # A smooth max version
+        #     new_f = 0.5*cs.sumsqr(smoothmap(lbg_constraints-g_constraints))
+        #     new_f += 0.5*cs.sumsqr(smoothmap(g_constraints-ubg_constraints))
+        # else:
+        new_f = 0.5*cs.sumsqr(cs.fmax(0, lbg_constraints-g_constraints))
+        new_f += 0.5*cs.sumsqr(cs.fmax(0, g_constraints-ubg_constraints))
 
         ## ------------ Define functions ------------------------------------------
         # # Function for the dynamics constraints
@@ -273,27 +276,28 @@ class OCP_To_Data_Transformer:
         jac_dyn_con_fun = cs.Function("jac_dyn_fun", [x_vector, parameters], [cs.jacobian(g_dynamics, x_vector)], opts)
 
         # Functions for objective
-        if smoothmax:
-            gn_con1 = cs.jacobian(smoothmap(lbg_constraints-g_constraints), x_vector)
-            gn_con2 = cs.jacobian(smoothmap(g_constraints-ubg_constraints), x_vector)
-        else:    
-            gn_con1 = cs.jacobian(cs.fmax(0, lbg_constraints-g_constraints), x_vector)
-            gn_con2 = cs.jacobian(cs.fmax(0, g_constraints-ubg_constraints), x_vector)
+        # if smoothmax:
+        #     gn_con1 = cs.jacobian(smoothmap(lbg_constraints-g_constraints), x_vector)
+        #     gn_con2 = cs.jacobian(smoothmap(g_constraints-ubg_constraints), x_vector)
+        # else:
+        gn_con1 = cs.jacobian(cs.fmax(0, lbg_constraints-g_constraints), x_vector)
+        gn_con2 = cs.jacobian(cs.fmax(0, g_constraints-ubg_constraints), x_vector)
         hessian_fun = cs.Function("hessian_fun", [x_vector, parameters], [gn_con1.T @ gn_con1 + gn_con2.T @ gn_con2], opts)
         # Define a function for Casadi Hessian
         con_multiplier = cs.MX.sym('lam_g', g_dynamics.shape[0])
         obj_multiplier = cs.MX.sym('obj_mult', 1)
+        # casadi_hessian_fun = cs.Function("nlp_hess_l", [x_vector, parameters, obj_multiplier, con_multiplier], [cs.gradient(new_f + con_multiplier.T @ g_dynamics,x_vector), gn_con1.T @ gn_con1 + gn_con2.T @ gn_con2, ], opts)
         casadi_hessian_fun = cs.Function("casadi_hess_fun", [x_vector, parameters, obj_multiplier, con_multiplier], [cs.triu(gn_con1.T @ gn_con1 + gn_con2.T @ gn_con2)], opts)
         gradient_obj_fun = cs.Function("gradient_obj_fun", [x_vector, parameters], [cs.gradient(new_f,x_vector)], opts)
         obj_fun = cs.Function("gradient_obj_fun", [x_vector, parameters], [new_f], opts)
-       
+
         ## ------------- Define objective gradient wrt to controls-------------
         u_vector = cs.MX.sym('controls', N*ocp.nu)
         x_placeholder = cs.MX.sym('x_placeholder', ocp.nx)
         x_tmp = x_placeholder
         new_x_wrt_u_vector = cs.vertcat(x_tmp)
         new_u_from_x = cs.vertcat([])
-        
+
         for i in range(N):
             new_u_from_x = cs.vertcat(new_u_from_x, x_vector[i*(ocp.nx+ocp.nu)+ocp.nx:(i+1)*(ocp.nx+ocp.nu)])
             u_tmp = u_vector[i*ocp.nu:(i+1)*ocp.nu]
@@ -325,7 +329,7 @@ class OCP_To_Data_Transformer:
         data['feas_nlp_discrete_dynamics_fun'] = discrete_dynamics_fun
         data['feas_nlp_control_obj_fun'] = obj_control
         data['feas_nlp_control_obj_gradient_fun'] = norm_control_gradient_fun
-        
+
         return data
 
     def transform(self, ocp: rockit.Ocp, smoothmax=False):
@@ -378,7 +382,7 @@ class OCP_To_Unconstrained_NLP_Transformer():
         hessian_fun = cs.Function("hessian_fun", [x_vector, parameters], [gn_con1.T @ gn_con1 + gn_con2.T @ gn_con2])
         gradient_obj_fun = cs.Function("gradient_obj_fun", [x_vector, parameters], [cs.gradient(new_f,x_vector)])
         obj_fun = cs.Function("gradient_obj_fun", [x_vector, parameters], [new_f])
-       
+
         ## ------------------- Define data dictionary -----------------------------
         data['feas_nlp_n_variables'] = x_vector.shape[0]
         data['feas_nlp_f_fun'] = obj_fun
@@ -388,4 +392,48 @@ class OCP_To_Unconstrained_NLP_Transformer():
         data['parameter_values'] = p0_vector
 
         return data
-    
+
+if __name__ == "__main__":
+    # task_name = "pendulum_balance"
+    # deterministic = True
+    # task = create_task(task_name)
+
+    load_path = Path.cwd()
+    # NOTE: Don't forget to change N and T in the task.py accordingly when loading other problems
+    load_path = (
+        load_path / "non_converging_iterates"
+    )
+    cart_on_pole = PendulumOnCartMPC()
+    ocp = cart_on_pole.ocp
+    ocp_solver = AcadosOcpSolver(ocp)
+
+    files = list(load_path.iterdir())
+    print("Number of non convergences in directory: ", len(files) / 3)
+    files_grouped = group_files_by_status(files)
+    for group in files_grouped.keys():
+        files_grouped[group] = sorted(
+            files_grouped[group], key=lambda f: extract_status_and_index(f.name)
+        )
+
+    assert len(files) == len(files_grouped[1]) + len(files_grouped[2]) + len(
+        files_grouped[4]
+    ), "Some files have been lost?"
+
+    instance_status = 2
+
+    indices = [1, 211, 469]
+    for i in indices:
+        run_problem_instance(
+            ocp_solver,
+            instance_status=instance_status,
+            instance_index_ls=i,
+            files_grouped=files_grouped,
+        )
+    # load_and_plot_all(
+    #     files_grouped=files_grouped,
+    #     identifier="x0",
+    # )
+    # load_and_plot_all(
+    #     files_grouped=files_grouped,
+    #     identifier="param",
+    # )
