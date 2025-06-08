@@ -1,7 +1,19 @@
-from acados_template import AcadosOcp, AcadosOcpSolver
+from acados_template import AcadosOcp, AcadosOcpSolver, AcadosOcpFlattenedIterate, AcadosCasadiOcpSolver
 from time_optimal_pendulum_model import export_free_time_pendulum_ode_model
 import numpy as np
 import pickle
+from dataclasses import dataclass
+
+@dataclass
+class PendulumSimulationParameters:
+    N = 100
+    nx = 5  # number of states
+    nu = 1  # number of controls
+    n_problems = 100
+    n_runs_per_instance = 20
+    moon_x = np.linspace(0.7, 4.3, n_problems)
+    x_init = np.array([5.0, 0.0, 0.0, 0.0, 0.0])
+    u_init = np.array([0.0])
 
 def create_ocp(use_ddp=True):
     # create ocp object to formulate the OCP
@@ -31,7 +43,6 @@ def create_ocp(use_ddp=True):
 
     pendulum_position = np.array([model.x[1]-0.8*np.sin(model.x[2]), 0.8*np.cos(model.x[2])])
 
-    ocp.dims.N = N
     ###########################################################################
     # Define constraints
     ###########################################################################
@@ -64,76 +75,61 @@ def create_ocp(use_ddp=True):
 
     # ------------------- set options -----------------------------------------
     ocp.solver_options.qp_solver = 'PARTIAL_CONDENSING_HPIPM'
-    ocp.solver_options.hessian_approx = 'GAUSS_NEWTON' # 'GAUSS_NEWTON', 'EXACT'
-    # ocp.solver_options.regularize_method = 'MIRROR'
+    ocp.solver_options.hessian_approx = 'GAUSS_NEWTON'
     ocp.solver_options.with_adaptive_levenberg_marquardt = True
+    ocp.solver_options.adaptive_levenberg_marquardt_lam = 5.0
+    ocp.solver_options.adaptive_levenberg_marquardt_mu0 = 1e-3
     ocp.solver_options.integrator_type = 'ERK'
     ocp.solver_options.print_level = 0
     ocp.solver_options.nlp_solver_max_iter = 500
+
     if use_ddp:
-        ocp.solver_options.nlp_solver_type = 'DDP' # SQP_RTI, SQP
+        ocp.solver_options.nlp_solver_type = 'DDP'
         ocp.solver_options.globalization = 'MERIT_BACKTRACKING'
     else:
-        ocp.solver_options.nlp_solver_type = 'SQP' # SQP_RTI, SQP
-        ocp.solver_options.globalization = 'FUNNEL_L1PEN_LINESEARCH'#'MERIT_BACKTRACKING'#
-        ocp.solver_options.globalization_funnel_fraction_switching_condition = 1e-3
-        ocp.solver_options.globalization_funnel_init_increase_factor = 1.25
-        ocp.solver_options.globalization_funnel_init_upper_bound = 100
-        ocp.solver_options.globalization_eps_sufficient_descent = 1e-4
-        ocp.solver_options.globalization_funnel_kappa = 0.5
-        ocp.solver_options.globalization_funnel_sufficient_decrease_factor = 0.99
-        ocp.solver_options.globalization_full_step_dual = False
-        # ocp.solver_options.globalization_funnel_use_merit_fun_only = True
+        ocp.solver_options.nlp_solver_type = 'SQP'
+        # ocp.solver_options.globalization = 'FUNNEL_L1PEN_LINESEARCH'
+        ocp.solver_options.globalization = 'MERIT_BACKTRACKING'
 
     # set prediction horizon
     ocp.solver_options.tf = Tf
-    # ocp.solver_options.N_horizon = N
+    ocp.solver_options.N_horizon = N
 
     ocp.translate_to_feasibility_problem()
 
-    ocp_solver = AcadosOcpSolver(ocp, json_file = 'acados_ocp.json')
+    return ocp
 
-    # Remove cost scaling with time steps
-    for i in range(N):
-        ocp_solver.cost_set(i, "scaling", 1.0)
-    simX = np.zeros((N+1, nx))
-    simU = np.zeros((N, nu))
+def test_acados_solver(ocp: AcadosOcp):
+    params = PendulumSimulationParameters()
+    ocp_solver = AcadosOcpSolver(ocp)
 
-    return ocp_solver
-
-if __name__ == '__main__':
-    USE_DDP = True
     stats = []
     timings = []
     n_iter = []
-    n_problems = 100
-    N = 100
-    n_runs_per_instance = 20
-    ocp_solver = create_ocp(USE_DDP)
-    moon_x = np.linspace(0.7, 4.3, n_problems)
-    x_init = np.array([5.0, 0.0, 0.0, 0.0, 0.0])
-    u_init = np.array([0.0])
-
     fails = []
-    for i in range(n_problems):
+
+    # Remove cost scaling with time steps
+    for i in range(params.N):
+        ocp_solver.cost_set(i, "scaling", 1.0)
+
+    for i in range(params.n_problems):
         times = []
         status_acados = []
-        for k in range(n_runs_per_instance):
+        for _ in range(params.n_runs_per_instance):
             # Initial guess
-            for j in range(N):
-                ocp_solver.set(j, "x", x_init)
-                ocp_solver.set(j, "u", u_init)
+            for j in range(params.N):
+                ocp_solver.set(j, "x", params.x_init)
+                ocp_solver.set(j, "u", params.u_init)
                 # Set parameter
-                ocp_solver.set(j, "p", np.array([moon_x[i]]))
-            ocp_solver.set(N, "x", x_init)
-            ocp_solver.set(N, "p", np.array([moon_x[i]]))
+                ocp_solver.set(j, "p", np.array([params.moon_x[i]]))
+            ocp_solver.set(params.N, "x", params.x_init)
+            ocp_solver.set(params.N, "p", np.array([params.moon_x[i]]))
 
             status = ocp_solver.solve()
             times.append(ocp_solver.get_stats("time_tot"))
             status_acados.append(status)
 
-        # n_iter.append(ocp_solver.get_stats("sqp_iter"))
-        n_iter.append(ocp_solver.get_stats("ddp_iter"))
+        n_iter.append(ocp_solver.get_stats("nlp_iter"))
         timings.append(min(times))
         if max(status_acados) == 0:
             # print("Success")
@@ -143,6 +139,63 @@ if __name__ == '__main__':
             print("i: ", i)
             fails.append(i)
             stats.append("Fail")
+
+    return  stats, n_iter, timings, fails
+
+# def test_acados_casadi_solver(ocp: AcadosOcp):
+#     params = PendulumSimulationParameters()
+
+#     stats = []
+#     timings = []
+#     n_iter = []
+#     fails = []
+
+
+#     for i in range(params.n_problems):
+#         # Set parameter here
+#         ocp.parameter_values = np.array([params.moon_x[i]])
+#         # Create casadi solver
+#         casadi_solver = AcadosCasadiOcpSolver(ocp, use_acados_hessian=False)
+#         # Remove cost scaling with time steps
+#         # for i in range(params.N):
+#         #     casadi_solver.cost_set(i, "scaling", 1.0)
+#         times = []
+#         status_acados = []
+#         for _ in range(params.n_runs_per_instance):
+#             # Initial guess
+#             for j in range(params.N):
+#                 casadi_solver.set(j, "x", params.x_init)
+#                 casadi_solver.set(j, "u", params.u_init)
+#                 # Set parameter
+#                 # casadi_solver.set(j, "p", np.array([params.moon_x[i]]))
+#             casadi_solver.set(params.N, "x", params.x_init)
+#             # casadi_solver.set(params.N, "p", np.array([params.moon_x[i]]))
+
+#             status = casadi_solver.solve()
+#             # times.append(casadi_solver.get_stats("time_tot"))
+#             status_acados.append(status)
+
+#         n_iter.append(casadi_solver.get_stats("nlp_iter"))
+#         # timings.append(min(times))
+#         if max(status_acados) == 0:
+#             # print("Success")
+#             stats.append("Success")
+#         else:
+#             print("Fail")
+#             print("i: ", i)
+#             fails.append(i)
+#             stats.append("Fail")
+
+#     return  stats, n_iter, timings, fails
+
+
+if __name__ == '__main__':
+    USE_DDP = True
+
+    params = PendulumSimulationParameters()
+    ocp = create_ocp(USE_DDP)
+
+    stats, n_iter, timings, fails = test_acados_solver(ocp)
 
     if USE_DDP:
         with open('acados_ddp_n_eval_gn_hessian.pkl', 'wb') as f:

@@ -26,8 +26,12 @@ latexify()
 # DDP
 ###############################################################################
 # Open files
-ddp_file_timings = open(dir_name + '/acados_ddp_results/acados_timings.pkl', 'rb')
-ddp_file_n_eval_gn_hessian = open(dir_name + '/ddp_results/ddp_n_eval_gn_hessian.pkl', 'rb')
+ddp_file_timings = open(dir_name + '/../acados_cart_pendulum_with_other_solvers/acados_ddp_timings.pkl', 'rb')
+ddp_file_n_eval_gn_hessian = open(dir_name + '/../acados_cart_pendulum_with_other_solvers/acados_ddp_n_eval_gn_hessian.pkl', 'rb')
+
+# Files initial submission
+# ddp_file_timings = open(dir_name + '/acados_ddp_results/acados_ddp_timings.pkl', 'rb')
+# ddp_file_n_eval_gn_hessian = open(dir_name + '/ddp_results/ddp_n_eval_gn_hessian.pkl', 'rb')
 # Load stuff
 ddp_timings = pickle.load(ddp_file_timings)
 print('acados ddp timings: ', ddp_timings)
@@ -40,8 +44,10 @@ ddp_file_n_eval_gn_hessian.close()
 # SQP
 ###############################################################################
 # Open files
-sqp_file_timings = open(dir_name + '/acados_ddp_results/acados_sqp_timings.pkl', 'rb')
-sqp_file_n_eval_gn_hessian = open(dir_name + '/acados_ddp_results/acados_sqp_n_eval_gn_hessian.pkl', 'rb')
+sqp_file_timings = open(dir_name + '/../acados_cart_pendulum_with_other_solvers/acados_sqp_timings.pkl', 'rb')
+sqp_file_n_eval_gn_hessian = open(dir_name + '/../acados_cart_pendulum_with_other_solvers/acados_sqp_n_eval_gn_hessian.pkl', 'rb')
+# sqp_file_timings = open(dir_name + '/acados_ddp_results/acados_sqp_timings.pkl', 'rb')
+# sqp_file_n_eval_gn_hessian = open(dir_name + '/acados_ddp_results/acados_sqp_n_eval_gn_hessian.pkl', 'rb')
 # Load stuff
 sqp_timings = pickle.load(sqp_file_timings)
 print('acados sqp timings: ', sqp_timings)
