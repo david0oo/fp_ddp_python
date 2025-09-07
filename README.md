@@ -36,7 +36,6 @@ For generating creating the acados results. Please install acados according to i
 ```
 @article{Kiessling2024,
 	publisher = {IEEE},
-	keywords = {syscop-public, syscop-public-pdf},
 	year = {2024},
 	journal = {IEEE Control Systems Letters},
 	author = {Kiessling, David and Baumg{\"a}rtner, Katrin and Frey, Jonathan and Decr{\'e}, Wilm and Swevers, Jan and Diehl, Moritz},
