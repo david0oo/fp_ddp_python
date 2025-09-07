@@ -32,5 +32,17 @@ For generating creating the acados results. Please install acados according to i
   - For IPOPT without code generation run: `cart_pendulum/ipopt_no_codegen/cart_pendulum_comparison.py`
   - For Scipy run: `cart_pendulum/cart_pendulum_comparison.py`
 
+## Citing
+```
+@article{Kiessling2024,
+	publisher = {IEEE},
+	keywords = {syscop-public, syscop-public-pdf},
+	year = {2024},
+	journal = {IEEE Control Systems Letters},
+	author = {Kiessling, David and Baumg{\"a}rtner, Katrin and Frey, Jonathan and Decr{\'e}, Wilm and Swevers, Jan and Diehl, Moritz},
+	title = {Fast Generation of Feasible Trajectories in Direct Optimal Control},
+}
+```
+
 ## Contact
 For questions please send an email to david.kiessling@kuleuven.be
